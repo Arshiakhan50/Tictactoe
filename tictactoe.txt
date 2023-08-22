@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# Function to display the Tic-Tac-Toe board
+display_board() {
+  echo " ${board[1]} | ${board[2]} | ${board[3]} "
+  echo "----------"
+  echo " ${board[4]} | ${board[5]} | ${board[6]} "
+  echo "----------"
+  echo " ${board[7]} | ${board[8]} | ${board[9]} "
+}
+
+# Function to check if any player has won
+check_win() {
+  local player=$1
+  if [[ ${board[1]} == $player && ${board[2]} == $player && ${board[3]} == $player ]] ||
+     [[ ${board[4]} == $player && ${board[5]} == $player && ${board[6]} == $player ]] ||
+     [[ ${board[7]} == $player && ${board[8]} == $player && ${board[9]} == $player ]] ||
+     [[ ${board[1]} == $player && ${board[4]} == $player && ${board[7]} == $player ]] ||
+     [[ ${board[2]} == $player && ${board[5]} == $player && ${board[8]} == $player ]] ||
+     [[ ${board[3]} == $player && ${board[6]} == $player && ${board[9]} == $player ]] ||
+     [[ ${board[1]} == $player && ${board[5]} == $player && ${board[9]} == $player ]] ||
+     [[ ${board[3]} == $player && ${board[5]} == $player && ${board[7]} == $player ]]
+  then
+    echo "Player $player is the winner!"
+    display_board
+    if [ $player == "O" ]; then
+      exit 5
+    else  
+      exit 4
+    fi
+  fi
+}
+
+# Argument validation
+
+if [[ $1 != "X" && $1 != "O" ]]; then
+  echo "Arg 1: must be X or O"
+  exit 1
+fi
+
+if [[ ! -f $2 ]]; then
+  echo "Arg 2: Must be a readable file"
+  exit 2
+fi
+
+if [ ! -r $2 ]; then
+  echo "Arg 2: Must be a readable file"
+  exit 2
+fi
+
+if ! grep -q -E '^([1-9] ){8}[1-9]$' "$2"; then
+  echo "Arg 2: File must contain integers 1-9"
+  exit 3
+fi
+
+# Initialize the board
+declare -A board
+for ((i=1; i<=9; i++)); do
+  board[$i]="-"
+done
+
+# Read the moves from the input file
+moves=`cat "$2"`
+
+# Determine which player goes first
+current_player=$1
+next_player="O"
+if [ $current_player == "O" ]; then
+  next_player="X"
+fi
+typeset -i i=1
+# Play the moves
+for move in $moves; do
+  
+  if [[ ${board[$move]} == "O" || ${board[$move]} == "X" ]]; then
+  # echo " ${board[$move]} "
+    echo "Arg 2: Duplicate index entered at move $i"
+    exit 3
+  fi
+
+  # Update the board
+  board[$move]=$current_player
+
+  # Check if the current player has won
+  check_win $current_player
+
+
+  # Switch to the next player
+  current_player=$next_player
+  if [ $current_player == "O" ]; then
+    next_player="X"
+  else
+    next_player="O"
+  fi
+  # ((i++))
+  i+=1
+done
+
+# No player wins, the game ends in a tie
+echo "The game ends in a tie."
+display_board
+exit 6
